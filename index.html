@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101827"><title>AI SMART TRADER</title>
+<style>
+:root{--bg:#f4f6fa;--panel:#fff;--ink:#172235;--muted:#718096;--line:#e7ebf1;--navy:#101827;--green:#07865f;--red:#d34b55;--amber:#a66b10}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:var(--navy);color:#fff;padding:17px max(18px,calc((100% - 1180px)/2));display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{font-weight:800;letter-spacing:.5px}.brand span{color:#5dd5b0}.sub{font-size:12px;color:#a9b6c8}
+main{max-width:1180px;margin:22px auto;padding:0 16px}.top{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:16px}.top h1{font-size:23px;margin:0}.tag{font-size:11px;background:#fff0d9;color:#8b5b08;padding:5px 9px;border-radius:20px;font-weight:700}
+.layout{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}.card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:17px;box-shadow:0 2px 10px #15243a08}
+.controls{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin-bottom:16px}label{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}
+select,button{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px;background:#fff;color:var(--ink);font-size:14px}
+button{background:var(--navy);color:white;border:0;font-weight:700;cursor:pointer;align-self:end}button:hover{opacity:.9}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px}.muted{color:var(--muted);font-size:12px}.price{font-size:30px;font-weight:800;letter-spacing:-1px;margin:5px 0}
+.pill{border-radius:20px;padding:5px 10px;font-size:12px;font-weight:800;background:#edf1f5;color:#526174}.buy{background:#e2f6ee;color:var(--green)}.sell{background:#ffeaeb;color:var(--red)}.wait{background:#fff3dc;color:var(--amber)}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:15px}.metric{background:#f7f9fc;border-radius:10px;padding:11px}.metric small{display:block;color:var(--muted);font-size:11px}.metric b{font-size:16px}
+h2{font-size:16px;margin:0 0 13px}.levels{display:grid;grid-template-columns:1fr 1fr;gap:10px}.level{padding:12px;border:1px solid var(--line);border-radius:10px}.level small{display:block;color:var(--muted);font-size:11px}.level b{font-size:17px}.green{color:var(--green)}.red{color:var(--red)}
+canvas{width:100%;height:245px;display:block;margin-top:12px}
+.reasons{padding-left:18px;margin:8px 0 0}.reasons li{margin:7px 0;font-size:13px}
+.newsitem{padding:12px 0;border-top:1px solid var(--line)}.newsitem:first-of-type{border-top:0}.newsitem b{font-size:14px}.newsitem p{font-size:12px;color:var(--muted);margin:4px 0}
+footer{max-width:1180px;margin:15px auto 30px;padding:0 16px;color:var(--muted);font-size:11px}
+@media(max-width:760px){main{margin:16px auto}.layout{grid-template-columns:1fr}.controls{grid-template-columns:1fr 1fr}.controls button{grid-column:1/-1}.top h1{font-size:20px}.metrics{grid-template-columns:repeat(3,1fr)}header{padding:14px 16px}}
+</style></head>
+<body>
+<header><div><div class="brand">◈ AI <span>SMART TRADER</span></div><div class="sub">全市場智能交易助手</div></div><div class="sub">V1.0 · 人工確認模式</div></header>
+<main>
+<div class="top"><div><h1>交易總覽</h1><div class="muted">趨勢、交易計畫與市場情報集中查看</div></div><span class="tag" id="modeTag">示範行情 DEMO</span></div>
+<div class="controls">
+ <div><label>選擇市場商品</label><select id="symbol"></select></div>
+ <div><label>分析週期</label><select id="tf"><option>1D</option><option>4H</option><option>1H</option><option>30M</option><option selected>15M</option><option>5M</option><option>1M</option></select></div>
+ <button id="refresh">重新分析</button>
+</div>
+<div class="layout">
+ <section class="card">
+  <div class="row"><div><div class="muted" id="assetName">黃金 XAUUSD</div><div class="price" id="price">—</div><div class="muted" id="updated">等待資料</div></div><span class="pill wait" id="signal">等待分析</span></div>
+  <div class="metrics"><div class="metric"><small>趨勢方向</small><b id="trend">—</b></div><div class="metric"><small>RSI (14)</small><b id="rsi">—</b></div><div class="metric"><small>訊號評分</small><b id="score">—</b></div></div>
+  <canvas id="chart" width="900" height="300" aria-label="價格走勢圖"></canvas>
+  <div class="muted">簡化 K 線走勢示意；目前為模擬行情，非即時報價。</div>
+ </section>
+ <section class="card">
+  <h2>AI 交易計畫</h2>
+  <div class="muted" id="planIntro">等待分析結果</div>
+  <div class="levels" style="margin-top:13px">
+   <div class="level"><small>進場參考</small><b id="entry">—</b></div>
+   <div class="level"><small>停損 SL</small><b class="red" id="stop">—</b></div>
+   <div class="level"><small>第一止盈 TP1</small><b class="green" id="tp1">—</b></div>
+   <div class="level"><small>第二止盈 TP2</small><b class="green" id="tp2">—</b></div>
+  </div>
+  <div class="row" style="margin-top:13px"><span class="muted">風險報酬比</span><b id="rr">—</b></div>
+  <h2 style="margin-top:20px">判斷理由</h2><ul class="reasons" id="reasons"><li>等待資料</li></ul>
+  <div class="muted" style="margin-top:14px">訊號僅供研究；下單前請自行確認流動性、交易成本及風險。</div>
+ </section>
+ <section class="card">
+  <div class="row"><h2>市場新聞與事件</h2><span class="pill wait">尚未接入</span></div>
+  <div id="news"><div class="newsitem"><b>新聞資料源尚未設定</b><p>正式版將接入授權財經新聞、經濟日曆及央行公告。此處不會將假資料標示為即時新聞。</p></div></div>
+ </section>
+ <section class="card">
+  <h2>V1.0 功能狀態</h2>
+  <div class="newsitem"><b>已完成：多市場商品清單</b><p>涵蓋股票、ETF、期貨、外匯、貴金屬及加密貨幣示範標的。</p></div>
+  <div class="newsitem"><b>已完成：多週期技術分析</b><p>EMA20／60、RSI、ATR 與基本多空條件。</p></div>
+  <div class="newsitem"><b>下一階段：真實行情與新聞</b><p>需設定行情供應商、新聞 API 與各市場授權。</p></div>
+ </section>
+</div>
+</main>
+<footer>風險提示：本程式目前使用可重現的模擬行情，不構成投資建議。訊號不代表勝率或獲利保證；請勿直接以示範數值交易。</footer>
+<script>
+let markets=[];
+const $=id=>document.getElementById(id);
+function fmt(v){if(v===null||v===undefined)return "—";return Number(v).toLocaleString("en-US",{maximumFractionDigits:5});}
+async function init(){
+ const r=await fetch('/api/markets');markets=await r.json();
+ const s=$('symbol');let last='';
+ markets.forEach(m=>{if(m.market!==last){let g=document.createElement('optgroup');g.label=m.market;s.appendChild(g);last=m.market;}let o=document.createElement('option');o.value=m.symbol;o.textContent=m.name+' ('+m.symbol+')';s.lastChild.appendChild(o);});
+ s.value='XAUUSD';await load();
+}
+async function load(){
+ $('refresh').textContent='分析中…';$('refresh').disabled=true;
+ try{
+  const data=await (await fetch(`/api/analyze?symbol=${encodeURIComponent($('symbol').value)}&timeframe=${$('tf').value}`)).json();
+  const m=markets.find(x=>x.symbol===data.symbol);$('assetName').textContent=(m?m.name:data.symbol)+' · '+data.symbol+' · '+data.timeframe;
+  $('price').textContent=fmt(data.price);$('updated').textContent='更新時間：'+new Date(data.updated_at).toLocaleString();
+  $('trend').textContent=data.trend;$('rsi').textContent=data.rsi;$('score').textContent=data.score+'/100';
+  const sig=$('signal');sig.textContent=data.signal==='BUY'?'買進候選 ↑':data.signal==='SELL'?'賣出候選 ↓':'等待訊號';
+  sig.className='pill '+(data.signal==='BUY'?'buy':data.signal==='SELL'?'sell':'wait');
+  $('planIntro').textContent=data.signal==='WAIT'?'目前條件未同時成立，保持觀望。':(data.signal==='BUY'?'多單':'空單')+'候選，請人工確認後再決定是否交易。';
+  ['entry','stop','tp1','tp2'].forEach(k=>$(k).textContent=fmt(data[k]));
+  $('rr').textContent=data.risk_reward||'—';
+  $('reasons').innerHTML='';data.reasons.forEach(t=>{let li=document.createElement('li');li.textContent=t;$('reasons').appendChild(li)});
+  draw(data.candles);
+ }catch(e){$('planIntro').textContent='無法取得分析資料，請確認伺服器是否啟動。';}
+ finally{$('refresh').textContent='重新分析';$('refresh').disabled=false;}
+}
+function draw(candles){
+ const c=$('chart'),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);
+ ctx.strokeStyle='#edf0f4';ctx.lineWidth=1;for(let i=1;i<5;i++){let y=i*h/5;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+ let lo=Math.min(...candles.map(x=>x.low)),hi=Math.max(...candles.map(x=>x.high)),pad=(hi-lo)*.08||1;lo-=pad;hi+=pad;
+ const y=v=>h-18-(v-lo)/(hi-lo)*(h-36),step=w/candles.length;
+ candles.forEach((d,i)=>{let x=i*step+step/2,up=d.close>=d.open;ctx.strokeStyle=up?'#07865f':'#d34b55';ctx.fillStyle=ctx.strokeStyle;ctx.beginPath();ctx.moveTo(x,y(d.high));ctx.lineTo(x,y(d.low));ctx.stroke();let top=y(Math.max(d.open,d.close)),bottom=y(Math.min(d.open,d.close));ctx.fillRect(x-step*.28,top,Math.max(2,step*.56),Math.max(1,bottom-top));});
+}
+$('refresh').addEventListener('click',load);$('symbol').addEventListener('change',load);$('tf').addEventListener('change',load);init();
+</script></body></html>
